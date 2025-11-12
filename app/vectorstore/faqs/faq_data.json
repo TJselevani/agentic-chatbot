@@ -1,0 +1,14 @@
+[
+  {
+    "question": "How do I book a vehicle?",
+    "answer": "You can book a vehicle by specifying the pickup location, date, and vehicle type."
+  },
+  {
+    "question": "What are your service hours?",
+    "answer": "Our services are available 24 hours a day, 7 days a week."
+  },
+  {
+    "question": "Can I cancel my booking?",
+    "answer": "Yes, you can cancel your booking up to 30 minutes before pickup without any charge."
+  }
+]
