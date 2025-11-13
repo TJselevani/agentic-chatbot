@@ -1,11 +1,11 @@
-# app/core/rag_engine.py
-
-from langchain.chat_models import ChatOpenAI
-from langchain.prompts import PromptTemplate
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_core.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
+from langchain_chroma import Chroma
+
 from app.config import settings
+
+
 
 import os
 

@@ -3,9 +3,12 @@
 from fastapi import APIRouter, Request
 from app.core.memory.memory_manager import PersistentMemory
 from app.core.intent_layer.intent_classifier import get_intent
-from app.core.agentic_layer.agents.agent import agentic_router  # where your LangChain agent lives
+from app.core.agentic_layer.agent_manager import (
+    AgentManager,
+)  # where your LangChain agent lives
 
 router = APIRouter()
+
 
 @router.post("/chat")
 async def chat(request: Request):
@@ -16,12 +19,12 @@ async def chat(request: Request):
 
     # Load persistent memory
     memory_handler = PersistentMemory(user_id, session_id)
-    memory = memory_handler.get_memory()
+    # memory = memory_handler.get_memory()
 
     # Detect intent using PyTorch
     intent = get_intent(message)
 
-    agent = agentic_router(memory)
+    agent = AgentManager.get_agent()
 
     # Pass context to LangChain agent
     response = await agent.run(message, intent)

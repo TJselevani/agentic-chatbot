@@ -1,18 +1,16 @@
-# agentic_layer/tools/vehicle_booking_tool.py
 import requests
-from agentic_layer.tools import ReusableTool
+from app.core.agentic_layer.tools.base_tool import ReusableTool
+
 
 class VehicleBookingTool(ReusableTool):
-    name = "book_vehicle"
-    description = "Book or hail a vehicle based on user details such as pickup, dropoff, and vehicle type."
+    name: str = "book_vehicle"
+    description: str = (
+        "Book or hail a vehicle based on user details such as pickup, dropoff, and vehicle type."
+    )
 
     def _run(self, pickup: str, dropoff: str, vehicle_type: str = "sedan") -> str:
         api_url = "https://example.com/api/book_vehicle"
-        payload = {
-            "pickup": pickup,
-            "dropoff": dropoff,
-            "vehicle_type": vehicle_type
-        }
+        payload = {"pickup": pickup, "dropoff": dropoff, "vehicle_type": vehicle_type}
 
         try:
             response = requests.post(api_url, json=payload, timeout=10)
@@ -23,3 +21,6 @@ class VehicleBookingTool(ReusableTool):
                 return f"❌ Failed to book vehicle. API responded with {response.status_code}"
         except Exception as e:
             return f"⚠️ Error while booking vehicle: {str(e)}"
+
+    async def _arun(self, *args, **kwargs) -> str:
+        raise NotImplementedError("Async not implemented for VehicleBookingTool.")

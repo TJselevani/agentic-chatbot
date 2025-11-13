@@ -16,7 +16,7 @@ class LanguageDetector:
                 sheng_terms = ["niko", "msee", "gani", "form", "mambo", "poa", "nash", "sijui"]
                 if any(word in text.lower() for word in sheng_terms):
                     return "sheng"
-                return "english"
+                return "en"
             else:
                 return "unknown"
         except Exception:
