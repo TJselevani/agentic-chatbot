@@ -11,10 +11,16 @@ pydantic
 sqlalchemy
 redis
 httpx
+
+# LangChain Ecosystem
 langchain
 langchain-openai
 langchain-core
 langchain-community
+langchain-chroma
+langchain-huggingface
+
+
 chromadb
 requests~=2.32.5
 langdetect~=1.0.9

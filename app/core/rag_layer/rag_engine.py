@@ -1,6 +1,7 @@
+from langchain_classic.chains.retrieval_qa.base import RetrievalQA
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.prompts import PromptTemplate
-from langchain.chains import RetrievalQA
+# from langchain.chains import RetrievalQA
 from langchain_chroma import Chroma
 
 from app.config import settings
