@@ -13,3 +13,7 @@ class GrokAgent(BaseAgent):
 
     def run(self, message: str):
         return self.llm.invoke(message)
+
+    def get_llm(self):
+        from app.core.agentic_layer.llm_wrappers import BaseLLMWrapper
+        return BaseLLMWrapper(agent=self)

@@ -1,7 +1,9 @@
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+from app.vectorstore.initialize_store import create_embedding
+
 
 class FAQRetriever:
     def __init__(self):
@@ -11,7 +13,7 @@ class FAQRetriever:
             Document(page_content="You can cancel a booking from your dashboard anytime."),
             Document(page_content="Payments can be made using M-Pesa, credit card, or cash.")
         ]
-        self.embeddings = OpenAIEmbeddings()
+        self.embeddings = create_embedding()
         self.store = FAISS.from_documents(docs, self.embeddings)
 
     def retrieve_answer(self, query: str):

@@ -1,50 +1,81 @@
-from langchain_classic.chains.retrieval_qa.base import RetrievalQA
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_core.prompts import PromptTemplate
-# from langchain.chains import RetrievalQA
-from langchain_chroma import Chroma
-
-from app.config import settings
-
-
-
 import os
-
-# ===== Initialize the RAG pipeline =====
-def get_vectorstore():
-    db_path = os.path.join(settings.VECTOR_DB_PATH, "chroma_db")
-    embeddings = OpenAIEmbeddings(openai_api_key=settings.OPENAI_API_KEY)
-    vectorstore = Chroma(persist_directory=db_path, embedding_function=embeddings)
-    return vectorstore
+from langchain_classic.chains.retrieval_qa.base import RetrievalQA
+from langchain_core.prompts import PromptTemplate
+from langchain_chroma import Chroma
+from app.config import settings
+from app.vectorstore.initialize_store import create_embedding
 
 
-def get_rag_chain():
-    """Set up the Retrieval-Augmented Generation chain"""
-    llm = ChatOpenAI(model_name="gpt-4-turbo", temperature=0.3, openai_api_key=settings.OPENAI_API_KEY)
-    vectorstore = get_vectorstore()
+class RagEngine:
+    """
+    RAG Engine that can work with ANY LLM object.
+    (AzureAgent, OpenAIAgent, LocalAgent, etc.)
+    """
 
-    prompt_template = """Use the following FAQs and context to answer the user's question as accurately as possible.
-If the answer isn't directly found, say you don't have that information.
+    def __init__(self, llm):
+        self.llm = llm
+
+        # Cached components
+        self._vectorstore = None
+        self._chain = None
+
+    # ----------------------------------------
+    # Load Vectorstore
+    # ----------------------------------------
+    def load_vectorstore(self):
+        if self._vectorstore:
+            return self._vectorstore
+
+        # db_path = os.path.join(settings.VECTOR_DB_PATH, "chroma_db")
+        db_path = os.path.join(settings.BASE_DIR, "database", "chroma_db")
+        embeddings = create_embedding()
+
+        self._vectorstore = Chroma(
+            persist_directory=db_path,
+            embedding_function=embeddings,
+        )
+        return self._vectorstore
+
+    # ----------------------------------------
+    # Build RAG Chain using injected LLM
+    # ----------------------------------------
+    def get_chain(self):
+        if self._chain:
+            return self._chain
+
+        vectorstore = self.load_vectorstore()
+
+        prompt_template = """
+Use the following context to answer the user's question.
+If the answer isn't in the documents, say: "I don't have that information."
 
 Context:
 {context}
 
-Question: {question}
-Answer:"""
+Question:
+{question}
 
-    PROMPT = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
+Answer:
+"""
 
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=vectorstore.as_retriever(search_kwargs={"k": 3}),
-        chain_type_kwargs={"prompt": PROMPT}
-    )
-    return qa_chain
+        PROMPT = PromptTemplate(
+            template=prompt_template,
+            input_variables=["context", "question"],
+        )
 
+        self._chain = RetrievalQA.from_chain_type(
+            llm=self.llm,
+            chain_type="stuff",
+            retriever=vectorstore.as_retriever(search_kwargs={"k": 3}),
+            chain_type_kwargs={"prompt": PROMPT},
+        )
 
-def handle_faq(query: str):
-    """Fetch relevant FAQ info and generate an answer"""
-    qa_chain = get_rag_chain()
-    result = qa_chain.run(query)
-    return result
+        return self._chain
+
+    # ----------------------------------------
+    # Run Query
+    # ----------------------------------------
+    def run(self, message: str):
+        chain = self.get_chain()
+        result = chain.invoke({"query": message})
+        return result["result"]  # Return only the answer text

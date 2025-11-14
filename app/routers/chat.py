@@ -1,27 +1,56 @@
-from fastapi import APIRouter, Request
-from app.core.intent_layer.intent_classifier import get_intent
-from app.core.agentic_layer.agent_manager import handle_agentic_action
-from app.core.rag_layer.rag_engine import handle_faq
-from app.core.translat import detect_and_translate
+from fastapi import APIRouter
+from fastapi import HTTPException
+from app.core.conversation.orchastrator import OrchestratorResponse, ConversationOrchestrator
+from app.main2 import ChatResponse, ChatRequest
+from lib.logger.color_logger import setup_logger
+
+logger = setup_logger(__name__)
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
-@router.post("/")
-async def chat_endpoint(request: Request):
-    data = await request.json()
-    message = data.get("message")
+# Global orchestrator instance
+orchestrator = ConversationOrchestrator()
 
-    # Optional: Detect and translate to English
-    message_en, lang = detect_and_translate(message)
 
-    # Classify intent
-    intent = get_intent(message_en)
+@router.post("/", response_model=ChatResponse)
+async def chat(request: ChatRequest):
+    """
+    Main chat endpoint
 
-    if intent == "faq":
-        response = handle_faq(message_en)
-    else:
-        response = handle_agentic_action(intent, message_en)
+    Handles:
+    - Intent classification (PyTorch model)
+    - FAQ retrieval (RAG)
+    - Tool execution
+    - Multi-turn conversations
+    """
 
-    # Translate back to user language
-    final_response = detect_and_translate(response, target_lang=lang)
-    return {"intent": intent, "response": final_response}
+    try:
+        logger.info(f"Processing message from user {request.user_id}: {request.message}")
+
+        # Process message through orchestrator
+        response: OrchestratorResponse = await orchestrator.process_message(
+            user_id=request.user_id,
+            message=request.message,
+            session_id=request.session_id
+        )
+
+        # Get session ID from state
+        state = orchestrator.state_manager.get_or_create_state(
+            request.user_id,
+            request.session_id
+        )
+
+        return ChatResponse(
+            message=response.message,
+            response_type=response.response_type.value,
+            intent=response.intent,
+            confidence=response.confidence,
+            session_id=state.session_id,
+            requires_followup=response.requires_followup,
+            next_step=response.next_step,
+            metadata=response.metadata
+        )
+
+    except Exception as e:
+        logger.error(f"Error processing chat: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error processing message: {str(e)}")

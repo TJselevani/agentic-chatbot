@@ -1,7 +1,7 @@
 from app.core.intent_layer.intent_router import IntentRouter
 
 if __name__ == "__main__":
-    model_path = "./models/intent_model"
+    model_path = "./models/intent_model.pth"
     router = IntentRouter(model_path)
 
     print("🚀 Agentic Chatbot ready!")

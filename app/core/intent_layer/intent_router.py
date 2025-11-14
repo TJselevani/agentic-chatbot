@@ -1,16 +1,20 @@
-from app.core.agentic_layer.agent import create_agent
-from rag_layer.faq_retriever import FAQRetriever
-from intent_layer.intent_classifier import IntentClassifier
-from memory_layer.conversation_memory import ConversationManager
-from memory_layer.slot_manager import SlotManager
-from multilingual_layer.language_detector import LanguageDetector
-from multilingual_layer.translator import Translator
+from app.core.intent_layer.intent_classifier import IntentClassifierService
+from app.core.memory_layer.conversation_memory import ConversationManager
+from app.core.memory_layer.slot_manager import SlotManager
+from app.core.multilingual_layer.language_detector import LanguageDetector
+from app.core.multilingual_layer.translator import Translator
+from app.core.rag_layer.faq_retriever import FAQRetriever
+from app.core.agentic_layer.agent_manager import AgentManager
+
+agent_manager = AgentManager()
+
+azure = agent_manager.get_agent("azure")
 
 
 class IntentRouter:
-    def __init__(self, model_path: str):
-        self.classifier = IntentClassifier(model_path)
-        self.agent = create_agent()
+    def __init__(self, model_path: str = None):
+        self.classifier = IntentClassifierService(model_path)
+        self.agent = azure
         self.faq_retriever = FAQRetriever()
         self.memory = ConversationManager()
         self.slots = SlotManager()
@@ -28,11 +32,15 @@ class IntentRouter:
         translated_message = self.translator.translate_to_english(message, lang)
 
         # Classify intent on English text
-        intent, confidence = self.classifier.predict_intent(translated_message)
-        print(f"🎯 Intent: {intent} (confidence: {confidence:.2f})")
+        intent_details = self.classifier.get_intent_details(translated_message)
+        intent = intent_details["intent"]
+        confidence = intent_details["confidence"]
+        high_conf = intent_details["high_confidence"]
 
-        # Route logic (same as before)
-        if confidence < 0.6:
+        print(f"🎯 Intent: {intent} (confidence: {confidence:.2f}, high_confidence={high_conf})")
+
+        # Route logic
+        if not high_conf:
             reply = "🤔 I’m not sure what you mean. Could you rephrase that?"
         elif intent == "faq_query":
             reply = self.faq_retriever.retrieve_answer(translated_message)
@@ -63,34 +71,6 @@ class IntentRouter:
         }
         return slot_questions.get(slot_name, f"Please provide {slot_name}.")
 
-    def _continue_conversation(self, intent, message):
-        # Continue filling slots for active intent
-        active = self.active_intent
-        missing_slots = self.slots.get_missing_slots(active)
-
-        if not missing_slots:
-            # If all slots are filled, execute the action
-            response = self._execute_intent(active)
-            self.memory.update(message, response)
-            self.active_intent = None
-            return response
-
-        # Assume user just answered the last question
-        slot_to_fill = missing_slots[0]
-        self.slots.update_slot(active, slot_to_fill, message)
-
-        remaining = self.slots.get_missing_slots(active)
-        if remaining:
-            next_slot = remaining[0]
-            question = self._ask_for_slot(active, next_slot)
-            self.memory.update(message, question)
-            return question
-        else:
-            response = self._execute_intent(active)
-            self.memory.update(message, response)
-            self.active_intent = None
-            return response
-
     def _execute_intent(self, intent):
         filled_slots = self.slots.get_filled_slots(intent)
         print(f"✅ All slots collected: {filled_slots}")
@@ -102,33 +82,3 @@ class IntentRouter:
             return self.agent.run(f"Get weather for {filled_slots.get('location')}")
         else:
             return "✅ Task completed."
-
-# from agentic_layer.agent import create_agent
-# from rag_layer.faq_retriever import FAQRetriever
-# from intent_layer.intent_classifier import IntentClassifier
-#
-# class IntentRouter:
-#     def __init__(self, model_path: str):
-#         self.classifier = IntentClassifier(model_path)
-#         self.agent = create_agent()
-#         self.faq_retriever = FAQRetriever()
-#
-#     def handle_message(self, message: str):
-#         intent, confidence = self.classifier.predict_intent(message)
-#         print(f"🎯 Intent: {intent} (confidence: {confidence:.2f})")
-#
-#         # If confidence is low → fallback or ask clarification
-#         if confidence < 0.6:
-#             return "🤔 I'm not sure what you mean. Could you rephrase that?"
-#
-#         # Route based on intent
-#         if intent == "faq_query":
-#             answer = self.faq_retriever.retrieve_answer(message)
-#             return answer
-#
-#         elif intent in ["book_vehicle", "get_weather", "collect_feedback"]:
-#             response = self.agent.run(message)
-#             return response
-#
-#         else:
-#             return "⚙️ I'm still learning how to handle that request."

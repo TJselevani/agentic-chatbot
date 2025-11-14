@@ -1,16 +1,16 @@
 # app/core/orchestrator.py
-import logging
+
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 from enum import Enum
 
-from app.core.intent_layer.intent_classifier_2 import get_intent_with_confidence
+from app.core.intent_layer.intent_classifier import get_intent_with_confidence
 from app.core.agentic_layer.agent_manager import AgentManager
 from app.core.agentic_layer.tool_registry import get_registered_tools
-from app.core.rag_layer.rag_engine import handle_faq
+# from app.core.rag_layer.rag_engine import handle_faq
 from app.core.conversation.conversation_manager import ConversationStateManager, ConversationState
-
-logger = logging.getLogger(__name__)
+from lib.logger.color_logger import setup_logger
+logger = setup_logger(__name__)
 
 
 class ResponseType(Enum):
@@ -183,7 +183,15 @@ REASONING: <brief explanation>"""
 
         try:
             # Get answer from RAG
-            rag_answer = handle_faq(message)
+            from app.core.agentic_layer.agent_manager import AgentManager
+            from app.core.agentic_layer.agents.rag_agent import RagAgent
+
+            agent_manager = AgentManager()
+
+            azure = agent_manager.get_agent("azure")
+            rag = RagAgent(llm_agent=azure)
+
+            rag_answer = rag.run(message)
 
             # If RAG doesn't have good answer, use agent
             if "don't have that information" in rag_answer.lower() or len(rag_answer) < 20:

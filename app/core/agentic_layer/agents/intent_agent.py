@@ -12,3 +12,7 @@ class IntentAgent(BaseAgent):
     def run(self, message: str):
         intent = get_intent(message)
         return f"🧠 Classified intent: {intent}"
+
+    def get_llm(self):
+        from app.core.agentic_layer.llm_wrappers import BaseLLMWrapper
+        return BaseLLMWrapper(agent=self)

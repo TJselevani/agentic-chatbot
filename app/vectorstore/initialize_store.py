@@ -2,8 +2,6 @@ import json
 import os
 import openai
 from langchain_openai import OpenAIEmbeddings
-
-# from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from app.config import settings
@@ -73,7 +71,7 @@ def get_embeddings():
 
 def initialize_vectorstore():
     """Initialize or rebuild vector store from FAQs"""
-    faq_path = os.path.join(settings.VECTOR_DB_PATH, "faq_data.json")
+    faq_path = os.path.join(settings.DATA_DIR, "faq_data.json")
     db_path = os.path.join(settings.BASE_DIR, "database", "chroma_db")
 
     with open(faq_path, "r", encoding="utf-8") as f:

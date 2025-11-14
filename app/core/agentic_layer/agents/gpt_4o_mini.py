@@ -21,9 +21,13 @@ class GPT4oMiniAgent(BaseAgent):
         # Wrap in AgentExecutor
         self.agent = AgentExecutor(agent=react_agent, tools=tools, verbose=True)
 
-    def run(self, message: str):
-        return self.agent.invoke({"input": message})
+    # def run(self, message: str):
+    #     return self.agent.invoke({"input": message})
 
     def run(self, message: str):
         """Run the agent with a user message"""
         return self.agent.run(message)
+
+    def get_llm(self):
+        from app.core.agentic_layer.llm_wrappers import BaseLLMWrapper
+        return BaseLLMWrapper(agent=self)

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
-from app.core.rag_layer.rag_engine import handle_faq
-from app.core.agentic_layer.agent_manager import handle_agentic_action
+
+from app.core.intent_layer.intent_classifier import IntentClassifierService
 from app.core.multilingual_layer.translator import Translator
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
@@ -15,7 +15,9 @@ async def chat_endpoint(request: Request):
     # Optional translation
     message_en, lang = translator.detect_language(message)
 
-    intent = get_intent(message_en)
+    intentClassifier = IntentClassifierService()
+
+    intent = intentClassifier.predict(message_en)
 
     if intent == "faq":
         response = handle_faq(message_en)

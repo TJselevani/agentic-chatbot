@@ -1,5 +1,3 @@
-# app/core/agentic_layer/tools/vehicle_booking_tool.py
-import requests
 import uuid
 from datetime import datetime
 from typing import Dict, Any

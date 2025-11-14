@@ -24,7 +24,8 @@ async def chat(request: Request):
     # Detect intent using PyTorch
     intent = get_intent(message)
 
-    agent = AgentManager.get_agent()
+    agentManager = AgentManager()
+    agent = agentManager.get_agent("azure")
 
     # Pass context to LangChain agent
     response = await agent.run(message, intent)
